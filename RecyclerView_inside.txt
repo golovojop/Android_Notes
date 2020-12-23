@@ -1,0 +1,36 @@
+getViewByPosition()
+======================
+Порядок поиска ViewHolder'а:
+
+1. Просмотр Changed scrap
+2. Просмотр Attached scrap
+3. Просмотр Non-removed hidden views
+4. Просмотр view cache
+5. Stable IDs (???)
+6. Просмотр ViewCacheExtension
+7. Просмотр RecycledViewPool
+8. Если ничего не найдено, то onCreateViewHolder() -> onBindViewHolder()
+
+RecycledViewPool (RecyclerView.Recycler.RecycledViewPool)
+**********************************************************
+Построен на базе SparseArray: ключом является Int (view type), значением - ViewHolder
+для данного view type. То есть для каждого view type свой пул ViewHolder'ов, каждый работает
+как FIFO. По умолчанию их размеры - 5 элементов, но можно изменить:
+
+recyclerView.getRecycledViewPool().setMaxRecycledViews(SOME_VIEW_TYPE, POOL_CAPACITY)
+
+Пул нужен чтобы получить dirty ViewHolder нужного view type.
+
+Чтобы получить доступ к пулу: recyclerView.getRecycledViewPool()
+Чтобы установить СВОЙ пул: recyclerView.setRecycledViewPool(pool)
+Очистить пул: clear()
+Получить из пула diirty холдер: getRecycledView(viewType)
+Поместить в пул ViewHolder: putRecycledView(holder) (не рекомендуется использовать для самостоятельного создания холдеров)
+NOTE: можно создать один инстанс пула и использовать его в разных RecycleViews.
+
+Как попасть в RecycledViewPool
+------------------------------
+1. View покадает границы RecyclerView из-за прокрутки
+2. Изменилась модель: видимый элемент удалили или вставили новый, который вытеснил текущий видимый.
+
+
