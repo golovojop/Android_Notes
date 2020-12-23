@@ -1,0 +1,84 @@
+Анимации
+=================
+
+Существуют 3 разных фреймворка
+
+- Property Animations
+- View Animations (там же и Layout Animations)
+- Transition Animations 
+
+Их области использования:
+
+Property Animations - анимация свойств объектов. Любых объектов, а не только View.
+Transition Animations - Activity Transitions, Fragment Transitions (включая shared elements)
+
+Property Animations
+=====================
+ValueAnimator - генератор значений в диапазоне ОТ и ДО. Получаемые в процессе его работы значения нужно самостоятельно
+применять к объекту.
+
+ObjectAnimator - тоже работает как генератор, но может самостоятельно применять сгенерированные значения
+к конкретному свойству конкретного объекта. Свойство ищется либо с помошью рефлексии (по имени), либо через
+"говорящие" константы такие как ALPHA, ROTATION, ROTATION_X, ROTATION_Y, SCALE_X, SCALE_Y, TRANSLATION_X, TRANSLATION_Y,
+TRANSLATION_Z, X, Y, Z (это быстрее рефлексии). Может работать как с View так и с произвольными объектами.
+
+ViewPropertyAnimator - заточен на анимацию свойств именно View (под капотом использует ObjectAnimator). Упрощает жизнь
+и включается следующим образом:
+
+btnExample.animate().alpha(0.5f).rotation(90f).
+  scaleX(2).xBy(100).yBy(100).setDuration(1000).setStartDelay(10).
+  setListener(new AnimatorListenerAdapter() {
+      @Override
+      public void onAnimationStart(Animator animation) {
+          Toast.makeText(MainActivity.this, "Started...", Toast.LENGTH_SHORT).show();
+      };
+  });
+  
+
+ObjectAnimator можно задекларировать в XML в папке "res/animator/", затем заинфлейтить с помошью AnimatorInflater и запустить.
+
+
+"View Animations" (VA) and "LayoutAnimation" (LA)
+==================================================
+
+Обе техники анимации используются для анимирования ПОЯВЛЕНИЯ на экране.
+VA работает с отдельными View, LA работает с ViewGroup. VA загружает анимашку из XML и применяет к View.
+LA тоже считывает анимашку из XML и применяет её по отдельности к КАЖДОЙ дочерней View, то есть LA это
+не анимация всего контейнера разом, а анимация его дочерних View.
+
+Анимашки для VA/LA хранятся в res/anim однако отличаются по формату. Так для VA просто мы описываем саму анимацию (или их набор внутри set)
+
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fillAfter="true" >
+    <alpha
+        android:duration="1000"
+        android:interpolator="@android:anim/accelerate_interpolator"
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0" />
+</set>
+
+Однако для LA мы описываем не только саму анимацию, но и другие параметры, которые определяют:
+ - порядок обхода детей (анимашка применяется отдельно к каждому ребенку и можно указать в каком порядке их обходить)
+ - задержку (анимашка на каждой последующей View будет задерживаться относительно старта анимации предыдущей View)
+ - и прочее
+ 
+Для LA все эти данные помещаются в тег <layoutAnimation> 
+
+<?xml version="1.0" encoding="utf-8"?>
+<layoutAnimation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:animation="@anim/item_animation_from_right"
+    android:delay="10%"
+    android:animationOrder="normal"
+    />
+
+  
+View Animations
+---------------
+Считается устаревшим и менее гибким фреймворком. Сами анимашки декларируются в XML в папке "res/anim", затем загружаются
+с помощью AnimationUtils.loadAnimation(...) и применяются someView.startAnimation(someAnim)
+  
+LayoutAnimation
+---------------
+
