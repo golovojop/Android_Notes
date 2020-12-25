@@ -2,13 +2,13 @@ getViewByPosition()
 ======================
 Порядок поиска ViewHolder'а:
 
-1. Просмотр Changed scrap
-2. Просмотр Attached scrap
-3. Просмотр Non-removed hidden views
-4. Просмотр view cache
+1. Просмотр Changed scrap 						(поиск по position)
+2. Просмотр Attached scrap 						(поиск по position)
+3. Просмотр Non-removed hidden views 			(поиск по position)
+4. Просмотр view cache 							(поиск по position)
 5. Stable IDs (???)
-6. Просмотр ViewCacheExtension
-7. Просмотр RecycledViewPool
+6. Просмотр ViewCacheExtension 					(поиск по position)
+7. Просмотр RecycledViewPool 					(поиск по viewType)
 8. Если ничего не найдено, то onCreateViewHolder() -> onBindViewHolder()
 
 RecycledViewPool (RecyclerView.Recycler.RecycledViewPool)
@@ -30,7 +30,11 @@ NOTE: можно создать один инстанс пула и исполь
 
 Как попасть в RecycledViewPool
 ------------------------------
-1. View покадает границы RecyclerView из-за прокрутки
-2. Изменилась модель: видимый элемент удалили или вставили новый, который вытеснил текущий видимый.
+1. View покидает границы RecyclerView из-за прокрутки
+2. Изменилась модель: видимый элемент удалили или вставили новый, который вытеснил видимый.
+3. ViewHolder удаляется из кэша.
+4. Если ViewHolder найден в кэше по position, но имеет неправильный viewType
+5. Если ViewHolder использовался в pre-layout, но оказался не востребованным в post-layout.
+
 
 
