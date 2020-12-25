@@ -38,3 +38,11 @@ NOTE: можно создать один инстанс пула и исполь
 
 
 
+
+
+
+Набор полезных методов
+==========================
+
+
+RecyclerView::getChildViewHolder(view) - получить ViewHolder child'a
