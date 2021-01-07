@@ -1,0 +1,30 @@
+Shader
+=========================
+Объект, который используется в Paint, чтобы закрашивать элементы более сложным
+образом нежели просто заливка одним цветом. Например shader LinearGradient сгенерит
+набор цветов для заливки градиентом.
+
+Существующие shaders:
+
+ BitmapShader
+ ComposeShader
+ LinearGradient
+ RadialGradient
+ SweepGradient
+ BitmapGradient
+ ComposeGradient
+ ComposeGradient
+ 
+Если в Paint задан shader то цвет для каждого пикселя закрашиваемой поверхности
+она получает от него, а не из color.
+
+Пример. С помощью BitmapShader мы можем закрашивать поверхности битмапой. Если мы
+рисуем roundedRectangle кистью с таким шейдером, то фактически рисуем битмапу 
+с закругленными углами.
+
+Если "диапазона значений цветов", сгенеренных шейдером не хватает на всю закрашиваемую
+поверхность, то с помощью TileMode можно указать как закрашивать оставшуюся часть:
+
+The Shader.TileMode.CLAMP constant defines that the edge corners should be used to fill the extra space. 
+The Shader.TileMode.MIRROR constant defines that the image is mirrored.
+The Shader.TileMode.REPEAT defines that the image will be repeated.
