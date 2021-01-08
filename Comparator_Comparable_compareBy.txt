@@ -7,7 +7,7 @@ interface Comparable<T> {
 	int compareTo(T other);
 }
 
-// Чтобы сравнивать ЧУЖИЕ классы( которые либо не Comparable либо Comparable, но 
+// Чтобы сравнивать ЧУЖИЕ классы (которые либо не Comparable либо Comparable, но 
 // не по тому критерию, который нам нужен)
 //
 interface Comparator<E> {
