@@ -1,0 +1,13 @@
+Affinity
+=================
+Activity имеет атрибут affinity. По умолчанию он равен пакету (package) приложения. У таска тоже есть атрибут affinity и при создании таска
+в этот атрибут помещается значение из affinity корневого Activity.
+
+parentActivity
+=================
+Что такое parentActivity хорошо описано здесь:
+https://startandroid.ru/ru/uroki/vse-uroki-spiskom/510-urok-185-notifications-rezhimy-otkrytiya-activity.html
+
+А также есть пример как автоматически последовательно запустить две активити, которые находятся в отношении parent-child
+
+
