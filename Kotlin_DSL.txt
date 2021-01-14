@@ -65,7 +65,25 @@
 	NOTE: Чтобы узнать имеет ли лямда ресивер (и какого типа) нужно посмотреть на сигнатуру
 	обычной функции, в которой лямда является аргументом.
 
+9. The invoke convention. Позволяет вызывать объекты как функции ! Класс, для которого определен 
+ 	метод invoke с модификатором operator, может быть вызван как функция !!! Точнее 
+	
+	Пример:
 
+	class Greeter(val greeting: String) {
+	  operator fun invoke(name: String) {
+	    println("$greeting, $name!")
+	  }
+	}
+
+	И теперь:
+	1. Создаем инстанс
+	  val bavarianGreeter = Greeter("Servus")
+	2. Вызываем инстанс как функцию
+	  bavarianGreeter("Dmitry")	=> compile to "bavarianGreeter.invoke("Dmitry")"
+	
+	NOTE: метод invoke может иметь любые параметры и любые возвращаемые значения. То есть
+	его можно overload.
 
 Матчасть:
 -------------------------
