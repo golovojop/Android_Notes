@@ -44,5 +44,28 @@ NOTE: можно создать один инстанс пула и исполь
 Набор полезных методов
 ==========================
 
-
 RecyclerView::getChildViewHolder(view) - получить ViewHolder child'a
+
+ViewHolder::setIsRecyclable(Boolean) - указываем может ли холдер утилизироваться. Во время
+анимации система отключает у холдера такую возможность.
+
+View::setHasTransientState(Boolean) - View в переходном состоянии (например таже анимация) и
+не рекомендуется обновлять её контент. Причем этот признак передается от вложенного child'а
+вверх до родителя и вся ViewGroup находится в этом состоянии. ViewHolder следит за этим
+флагом у своего itemView и если состояние переходное, то холдер не может утилизироваться.
+
+ViewHolder::onFailedToRecycledView(Boolean) Если по одной из 2-х указанных причин холдер 
+не может утилизироваться, то возникает ошибка с вызовом этого метода. Если вернуть true,
+то холдер будет принудительно утилизирован.
+
+Adapter::onViewRecycled(ViewHolder) - холдер успешно утилизирован. Можно освобождать ресурсы
+и отписываться от Rx.
+
+
+Adapter
+-------
+Adapter::onDetachedFromRecyclerView(RecyclerView)
+Adapter::onViewAttachedToWindow(ViewHolder)
+Adapter::onViewDetachedFromWindow(holder)
+
+onViewRecycled
