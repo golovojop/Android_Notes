@@ -64,8 +64,9 @@ Adapter::onViewRecycled(ViewHolder) - холдер успешно утилизи
 
 Adapter
 -------
-Adapter::onDetachedFromRecyclerView(RecyclerView)
+Adapter::onAttachedToRecyclerView - адаптер подключился к RecycleViews
+Adapter::onDetachedFromRecyclerView(RecyclerView) - RecycleViews больше не следит за адаптером
+Adapter::onViewDetachedFromWindow(ViewHolder)
 Adapter::onViewAttachedToWindow(ViewHolder)
-Adapter::onViewDetachedFromWindow(holder)
 
 onViewRecycled
