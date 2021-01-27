@@ -1,0 +1,48 @@
+Билдеп корутины
+
+fun builderProc(op : () -> Unit) : Job
+
+
+Continuation
+=============
+
+Корутина упаковывается в Continuation-класс: это просто наследник интерфейса SuspendLambda.
+Код, указанный выше как параметр билдера ( op: ...), попадет внуть invokeSuspend. 
+
+interface SuspendLambda {
+	fun invokeSuspend(any : Any?)
+}
+
+Общий вид алгоритма (в Java):
+-----------------------------
+
+Прототип suspend-функции: fun suspendProc(..., c: SuspendLambda)
+
+
+int label;
+
+void invokeSuspend(Object result) {
+    switch (label) {
+        case 0: {
+            label = 1;
+ 
+            suspendProcA(..., this); 	// suspend function
+            return;
+        }
+        case 1: {
+            label = 2;
+ 
+			suspendProcB(..., this); 	// suspend function
+            return;
+        }
+        case 2: {
+            toast("OK");
+            return;
+        }
+    }
+}
+
+Задача suspendProc - запустить какую-нибудь асинхронную работу (например, создать rx-подписку) и СРАЗУ вернуть управление.
+Когда подписка сработает, то invokeSuspend будет вызвана снова, благодаря аргументу this в suspendProc. То есть invokeSuspend
+вызывается НЕ рекурсивно, а последовательно, после того как сработает подписка очередной suspendProc. Получается такой
+конвеер из suspendProc.
