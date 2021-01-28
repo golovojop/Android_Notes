@@ -49,3 +49,21 @@ interface Group<out Dog> {
 }
 
 В итоге group (аргумент функции read) имеет тип "type-projection Group<out Dog>"
+
+Обрати внимание, что в тот момент как мы определили type-projection через use-site variance,
+то мы создали новый ТИП, основателя иерархии наследования, корень новой иерархии. Теперь
+создавая детей ориентируемся на него, а не на interface Group<in T>. И все наследники
+от "type-projection Group<out Dog>" будут принимать НЕ МЕНЬШЕ своего родителя, потому
+что родитель вообще не принимает ничего 'fun insert(item: Nothing)', а наследники
+могут принимать все что угодно, например:
+
+class MyDog : Dog()
+
+interface Group<MyDog> : Group<out Dog> {
+	fun insert(item: MyDog): Unit
+	fun fetch(): MyDog
+}
+
+То есть везде где ранее использовался ролитель Group<out Dog> мы можем подставить Group<MyDog>.
+
+
