@@ -1,0 +1,18 @@
+Получить свой локальный IPv4
+
+    private fun getLocalIpAddress(): String? {
+        val interfaces = NetworkInterface.getNetworkInterfaces().toList()
+
+        try {
+            for (i in interfaces) {
+                for (address in i.inetAddresses) {
+                    if (!address.isLoopbackAddress && address is Inet4Address) {
+                        return address.hostAddress
+                    }
+                }
+            }
+        } catch (e: Exception) {
+        }
+
+        return null
+    }
