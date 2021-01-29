@@ -28,3 +28,9 @@ Shader
 The Shader.TileMode.CLAMP constant defines that the edge corners should be used to fill the extra space. 
 The Shader.TileMode.MIRROR constant defines that the image is mirrored.
 The Shader.TileMode.REPEAT defines that the image will be repeated.
+
+
+
+Bitmaps
+===================
+Для работы с большими битмапами можно попробовать использовать BitmapRegionDecoder
