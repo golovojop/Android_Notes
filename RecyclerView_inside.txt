@@ -1,3 +1,7 @@
+https://android.jlelse.eu/anatomy-of-recyclerview-part-1-a-search-for-a-viewholder-404ba3453714
+https://android.jlelse.eu/anatomy-of-recyclerview-part-1-a-search-for-a-viewholder-continued-d81c631a2b91#.dcsykhoh9
+--------------------------------------------------------------------------------------------------------------------
+
 getViewByPosition()
 ======================
 Порядок поиска ViewHolder'а:
@@ -30,16 +34,28 @@ NOTE: можно создать один инстанс пула и исполь
 
 Как попасть в RecycledViewPool
 ------------------------------
-1. View покидает границы RecyclerView из-за прокрутки
-2. Изменилась модель: видимый элемент удалили или вставили новый, который вытеснил видимый.
+1. View покидает границы RecyclerView из-за прокрутки (на самом деле сначала идем в View Cache)
+2. Изменилась модель: видимый элемент удалили или вставили новый, который вытеснил видимый (на самом деле сначала идем в View Cache).
 3. ViewHolder удаляется из кэша.
 4. Если ViewHolder найден в кэше по position, но имеет неправильный viewType
 5. Если ViewHolder использовался в pre-layout, но оказался не востребованным в post-layout.
+6. Вызван notifyDataSetChanged() или его разновидность.
+
+Когда имеет смысл увеличить пул:
+- Если на экране много видимых элементов (например больше 5 одинакового view type) и часто делается notifyDataSetChanged() или его аналог.
+- Если делаем jumping с помощью scrollToPosition().
 
 
+NOTE: Predictive animation - это анимация изменений между PreLayout и PostLayout.
 
+View Cache (mCachedViews)
+========================
+Это ArrayList размером 2 без учета view types. Размер можно менять методом 
+RecyclerView.setItemViewCacheSize().
 
-
+Увеличивать размер кэша имеет смысл в том случае, если список крутится туда обратно,
+а если только в одну сторону, то смысла в увеличении нет, потому что под каждый новый
+элемент будет использоваться holder из ПУЛа.
 
 Набор полезных методов
 ==========================
@@ -47,7 +63,7 @@ NOTE: можно создать один инстанс пула и исполь
 RecyclerView::getChildViewHolder(view) - получить ViewHolder child'a
 
 ViewHolder::setIsRecyclable(Boolean) - указываем может ли холдер утилизироваться. Во время
-анимации система отключает у холдера такую возможность.
+анимации система отключает у холдера такую возможность и утилизация временно запрещена.
 
 View::setHasTransientState(Boolean) - View в переходном состоянии (например таже анимация) и
 не рекомендуется обновлять её контент. Причем этот признак передается от вложенного child'а
@@ -66,7 +82,7 @@ Adapter
 -------
 Adapter::onAttachedToRecyclerView - адаптер подключился к RecycleViews
 Adapter::onDetachedFromRecyclerView(RecyclerView) - RecycleViews больше не следит за адаптером
-Adapter::onViewDetachedFromWindow(ViewHolder)
-Adapter::onViewAttachedToWindow(ViewHolder)
+Adapter::onViewDetachedFromWindow(ViewHolder) - View ушло с экрана.
+Adapter::onViewAttachedToWindow(ViewHolder) - View вышло на экран.
 
 onViewRecycled
