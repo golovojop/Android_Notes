@@ -1,6 +1,48 @@
 Самое главное в RX - вовремя отписаться.
 ========================================
 
+Как выглядит Observable изнутри:
+--------------------------------
+
+Создаваемому Observable нужно передать функцию, которая будет генерить данные для подсписчиков.
+Функция передается в виде инстанса Observable.OnSubscribe. Как только появится новый подсписчик, то
+сразу будет вызвана Observable.OnSubscribe.call(subscriber) и работа начнется.
+
+	Observable.OnSubscribe<Integer> onSubscribe = new Observable.OnSubscribe<Integer>() {
+		@Override
+		public void call(Subscriber<? super Integer> subscriber) {
+			for (int i = 0; i < 10; i++) {
+			
+				.......
+
+				subscriber.onNext(i);
+			}
+			subscriber.onCompleted();
+		}
+	};
+
+	Observable<Integer> observable = Observable.create(onSubscribe)
+	observable.subscribe(subscriber)
+	
+
+Как работает цепочка операторов:
+--------------------------------
+
+Observable.just("1", "2", "3", "4", "5").map{ }.filter{ }.subscribe(someSubscriber)
+
+Каждый оператор - это новый Observable, который включает в себя предыдущий. Получается матрешка. Например для примера выше:
+
+- создается начальный Observable с помощью Observable.just. Назовем его SourceObservable.
+- Далее на SourceObservable вызывается map. Создается новый MapObservable со ссылкой на SourceObservable как на источник данных.
+- Далее на MapObservable вызывается filter и создается FilterObservable со ссылкой на MapObservable как на источник данных.
+- А потом выполняется подписка на FilterObservable и по цепочке доходит до SourceObservable в котором стартует 
+  Observable.OnSubscribe.call(mapObservable as Observer)
+
+У FilterObservable подписчиком является someSubscriber, а у SourceObservable - MapObservable. Код Observable.OnSubscribe.call()
+внутри SourceObservable начнет работать в том же потоке, что и FilterObservable.subscribe(someSubscriber).
+
+---------------------------------------------------------------------------------------------------------------------------------
+
 В обязанности Observable входит проверять статус подписчика, и если он отписался, то не слать ему более никаких событий.
 А подписчик, со своей стороны должен отписываться, если данные ему больше не нужны. Иначе Observable будет хранить 
 ссылку на подписчика и это может привести к утечке памяти, т.к. подписчик может запросто хранить неявную ссылку на Activity.
