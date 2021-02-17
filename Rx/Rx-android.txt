@@ -80,6 +80,61 @@ Hot Observable - создается из Cold Observable методом
 используется кэширование (Внимательно !)
 
 
+Backpressure
+===========================
+
+Сначала нужно повторить классическую схему взаимодействия между потоками, а именно паттерн Consumer-Producer.
+
+Producer:                                                    Consumer:
+----------                                                 ----------------------
+synchronized (shareLock)  {                                synchronized (shareLock)  {
+
+    while (list.size() == FULL_SIZE)                    		while (list.size() == 0)
+        wait();                                                     wait(); 
+		
+        list.add(value++);                                      int val = list.removeFirst();
+  		notify(); 											    notify();
+}                                                          }
+
+
+Теперь Rx:
+----------
+
+Observable.range(1, 100).subscribe { item -> println(item) }
+
+range - Это некий RangeObservable со своей реализацией Observable.OnSubscribe.call(subscriber). Функция call(...) будет вызвана
+в результате subscribe и в том же потоке, что и subscribe.
+
+Теперь делаем так:
+Observable.range(1, 100).subscribeOn(Schedulers.io()).subscribe { item -> println(item) }
+
+subscribeOn запустит call(...) в отдельном потоке, там она сгенерит данные и отдаст подписчику в onNext в этом же другом потоке,
+то есть код подписчика будет работать в потоке, созданном subscribeOn.
+
+В этих примерах нет межпотокового обмена данными, а теперь включим его:
+
+Observable.range(1, 100)
+	.subscribeOn(Schedulers.io())
+	.observeOn(AndroidSchedulers.mainThread())
+	.subscribe { item -> println(item) }
+
+Обмен данными между потоками будет происходить на границе операторов range/observeOn. subscribeOn просто запустит range в отдельном потоке, но именно
+оператору range придется передавать свои данные в новый поток оператора observeOn и именно в этом месте начинает работать механизм, который можно
+представить описанной выше схемой Consumer-Producer. Если Producer придерживается механизма synchronized/wait/notify, то можно говорить о том, 
+что Backpressure работает. Ну как-то так для понимания.
+
+NOTE: У оператора observeOn есть внутренний буфер (размером 16 элементов) при переполнении которого он пытается разговаривать с поставщиком
+через backpressure.
+
+Если поставщик не поддерживает backpressure, то можно применить промежуточный оператор OnBackpressure, который возьмет на себя роль безразмерного буфера
+и будет поддерживать backpressure контракт со снисходящим observeOn.
+
+Код работы с Backpressure и Flowable см в проекте IsiSandbox s.yarlykov.izisandbox.rx.test_rx.HeyFlowable.kt
+
+
+
+
+
 
 
 
