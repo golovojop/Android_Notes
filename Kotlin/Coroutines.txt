@@ -1,4 +1,5 @@
-Билдеп корутины
+Билдер корутины
+---------------
 
 fun builderProc(op : () -> Unit) : Job
 
@@ -19,7 +20,7 @@ interface SuspendLambda {
 Прототип suspend-функции: fun suspendProc(..., c: SuspendLambda)
 
 
-int label;
+int label = 0;
 
 void invokeSuspend(Object result) {
     switch (label) {
@@ -32,7 +33,7 @@ void invokeSuspend(Object result) {
         case 1: {
             label = 2;
  
-			suspendProcB(..., this); 	// suspend function
+	    suspendProcB(..., this); 	// suspend function
             return;
         }
         case 2: {
