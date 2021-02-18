@@ -1,0 +1,31 @@
+https://www.epam-group.ru/careers/mobile-development
+https://clck.ru/SmqAa
+http://globus-ltd.ru
+http://LeanTech.ai
+SberDevices
+Luxoft
+МТС
+https://pochta.tech/
+http://Ozon.travel
+
+------------------------------------
+https://inno.tech/
+
+Android:
+Андроид компоненты, IPC/Binder, Fragment, View, Layout, Custom View, Анимации, навигация
+
+Java: 
+объект, коллекции,  многопоточность, модель памяти
+
+Kotlin: 
+основные keyword'ы, корутины
+
+RxJava.
+
+Архитектура:
+MV* паттерны, SOLID, Чистая архитектура, Dependency Injection.
+
+Тестирование: Unit тестирование, интеграционное, UI.
+
+---------------------------------------------------------------
+
