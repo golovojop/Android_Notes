@@ -1,7 +1,7 @@
 Билдер корутины
 ---------------
 
-fun builderProc(op : () -> Unit) : Job
+fun builderProc(op : (Any) -> Unit) : Job
 
 
 Continuation
@@ -47,3 +47,6 @@ void invokeSuspend(Object result) {
 Когда подписка сработает, то invokeSuspend будет вызвана снова, благодаря аргументу this в suspendProc. То есть invokeSuspend
 вызывается НЕ рекурсивно, а последовательно, после того как сработает подписка очередной suspendProc. Получается такой
 конвеер из suspendProc.
+
+По уроку 4:
+Получается, что invokeSuspend всегда вызывается из Continuation.resume. Даже самый первый раз.
