@@ -50,3 +50,20 @@ void invokeSuspend(Object result) {
 
 По уроку 4:
 Получается, что invokeSuspend всегда вызывается из Continuation.resume. Даже самый первый раз.
+
+По уроку 7
+----------
+
+Оказывается в Android Architecture components уже встроены элементы для поддержки корутин. 
+В частности в LifeCyrcleOwner и ViewModel есть Scope'ы для корутин.
+
+ ViewModel or LifeCyrcle
+ -> SCOPE (ViewModelScope, LifecycleScope):
+     -> Context
+	-> JOB Parent
+	  -> Job1
+	  -> Job2
+	  -> Job...
+
+Также Scope можно создать самостоятельно.
+	
