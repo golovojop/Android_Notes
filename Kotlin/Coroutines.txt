@@ -66,4 +66,39 @@ void invokeSuspend(Object result) {
 	  -> Job...
 
 Также Scope можно создать самостоятельно.
+
+По уроку 10.
+-----------------------
+Companion object внутри класса может быть именованным или нет.
+ИМЯ КЛАССА, используемое САМО ПО СЕБЕ (а не как часть составного имени какого-нибудь qualifier'а),
+действует как ссылка на companion object (именованного или неименованного). Ниже увидим пример, а также :
+https://kotlinlang.org/docs/object-declarations.html#companion-objects
+
+Теперь по корутинам. Context 'представляется' в виде Map'ы благодаря своему 'operator fun get'.
+
+interface CoroutineContext
+	operator fun <E : Element> get(key: Key<E>): E?
+	operator fun plus(context: CoroutineContext): CoroutineContext
+
+interface Element : CoroutineContext		
+	==> Элемент Map'ы контекста
+
+interface Key<E : Element>					
+	==> Ключ Map'ы контекста. Однозначная привязка ТИПА ключа к ТИПУ элемента. То есть
+		ключ конкрентного типа может относится только к элементу конкрентного типа.
+
+interface Job : CoroutineContext.Element ==> Отдельный элемент, хранимый в Map'е
+
+А вот реализация ключей и доступа к Map'е. Мы видим, что Job может храниться в Map'е, потому что
+он является Element'ом. Также мы видим, что внутри Job задекларирован соответствующий Key
+для него. А как говорилось выше, для ссылки на companion object мы можем использовать имя
+внешнего класса, то найти Job в контексте можно вот так:
+
+  val job = coroutineContext[Job]   Куль !!!
+
+interface Job : CoroutineContext.Element {
+	companion object Key : CoroutineContext.Key<Job> {
+		. . . .
+	}
+}
 	
