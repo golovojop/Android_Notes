@@ -1,5 +1,53 @@
+Job
+======
+
+Job - создается иерархическая модель Job'ов для поддержания structured concurrency. А именно:
+на верху иерархии Job Scoupe'а, а ниже - Job'ы дочерних корутин и их жочерних корутин.
+
+По связям между Job'ами проходят следующие сообщения:
+
+- вверх к корневому: сообщения об Exceptions.
+- вниз команды Cancel.
+
+Context
+========
+Context - это собственно контекст выполнения корутины. Его состав определяется составом контекста
+родительской корутины и собственными параметрами, которые переопределяют параметры родительской корутины.
+
+
+Continuation
+==============
+
+В оригинале выглядит вот так:
+
+public interface Continuation<in T> {
+    /**
+     * The context of the coroutine that corresponds to this continuation.
+     */
+    public val context: CoroutineContext
+
+    /**
+     * Resumes the execution of the corresponding coroutine passing a successful or failed [result] as the
+     * return value of the last suspension point.
+     */
+    public fun resumeWith(result: Result<T>)
+}
+
+
+По сути (может быть ошибаюсь) это обертка вокруг Function2. Function2 выступает в роли 
+
+
+Object Function2(Object var1, Object var2) {
+	Object invoke(Object var1, Object var2) ==> запуск Function2 на выполнение
+	
+	Continuation create(@Nullable Object value, @NotNull Continuation completion)
+	Object invokeSuspend(@NotNull Object var1)
+}
+
+
 Билдер корутины
 ---------------
+
 
 fun Scope.builderProc(coroutineCode : Scope.(Any) -> Any) : Job
 
@@ -23,7 +71,7 @@ interface SuspendLambda {
 
 int label = 0;
 
-void invokeSuspend(Object result) : Object {
+fun invokeSuspend(Object result) : Object {
     switch (label) {
         case 0: {
             label = 1;
@@ -48,6 +96,8 @@ void invokeSuspend(Object result) : Object {
 Когда подписка сработает, то invokeSuspend будет вызвана снова, благодаря аргументу this в suspendProc. То есть invokeSuspend
 вызывается НЕ рекурсивно, а последовательно, после того как сработает подписка очередной suspendProc. Получается такой
 конвеер из suspendProc.
+
+NOE: Вызвать suspend функцию мы можем только в корутине или в другой suspend функции, но не в обычном коде !!!
 
 По уроку 4:
 Получается, что invokeSuspend всегда вызывается из Continuation.resume. Даже самый первый раз.

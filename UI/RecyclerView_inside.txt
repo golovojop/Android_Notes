@@ -61,6 +61,8 @@ RecyclerView.setItemViewCacheSize().
 ==========================
 
 RecyclerView::getChildViewHolder(view) - получить ViewHolder child'a
+RecyclerView::setRecyclerListener(listener) - получаем извещения, если child был recycled. listener - это интерфейс с одним
+	методом onViewRecycled(holder). Подходящий способ очистки/отписки ресурсов в холдере.
 
 ViewHolder::setIsRecyclable(Boolean) - указываем может ли холдер утилизироваться. Во время
 анимации система отключает у холдера такую возможность и утилизация временно запрещена.
@@ -84,5 +86,4 @@ Adapter::onAttachedToRecyclerView - адаптер подключился к Rec
 Adapter::onDetachedFromRecyclerView(RecyclerView) - RecycleViews больше не следит за адаптером
 Adapter::onViewDetachedFromWindow(ViewHolder) - View ушло с экрана.
 Adapter::onViewAttachedToWindow(ViewHolder) - View вышло на экран.
-
-onViewRecycled
+Adapter::onViewRecycled(holder) - холдер ушел в пул. Можно очищать ресурсы.

@@ -85,10 +85,15 @@ public final class CoroutineSamplesKt {
 
 	               === Создается первая дочерняя корутина ===============				  
 	
-	Обрати внимание - BuildersKt.launch$default где-то внутри себя запустит на выполнение Function2
-	в отдельном потоке и вернет управление родительской корутине. Function2 будет выполняться самостоятельно
-	и заблокирует свой поток в sleep()
+					=== Обрати внимание - BuildersKt.launch$default где-то внутри себя запустит на выполнение Function2
+					=== в отдельном потоке и вернет управление родительской корутине. Function2 будет выполняться самостоятельно
+					=== и заблокирует свой поток в sleep()
+					
+					
+					NOTE: Похоже, что 'new Function2...' - это создание вот такой вот лямды 'CoroutineScope.() -> Unit', которая передается BuildersKt.launch
+					Это та самая лямда, которая и есть тело корутины. Запустится она через Function2.invoke
 	
+				
                   Job job1 = BuildersKt.launch$default($this$launch, (CoroutineContext)null, (CoroutineStart)null, (Function2)(new Function2((Continuation)null) {
 				                        -------------                                                                         -----
                      === Это внутри декларации Function2 дочерней корутины. Здаесь свой label									
