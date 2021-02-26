@@ -228,3 +228,44 @@ Job в scope. Узнав о том, что в его дочерней корут
 
 Итак, при ошибке в одной из корутин отменяются все остальные активные корутины скоупа. Иногда это нежелательно и вместо Job() нужно 
 использовать SupervisorJob(). Он отличается от Job() тем, что не отменяет всех своих детей при возникновении ошибки в одном из них.
+
+По уроку 20 (Flow).
+-------------
+
+Существуют 2 интерфейса: Flow и FlowCollector
+
+Flow - генерит данные и отправляет куда-то через FlowCollector, вызывая его emit. (метод Flow::collect)
+FlowCollector - принимает данные и что-то с ними делает, например работает как map или передает конечному получателю.
+
+public interface Flow<out T> {
+     public suspend fun collect(collector: FlowCollector<T>)
+}
+
+public interface FlowCollector<in T> {
+   public suspend fun emit(value: T)
+}
+
+И есть ещё самостоятельная функция collect, которая связывает вместе Flow и FlowCollector. Её задача - создать
+коллектор, который перенаправит получаемые данные в кастомную action, а затем направить в коллектор данные
+из Flow.
+
+suspend inline fun <T> Flow<T>.collect(crossinline action: suspend (value: T) -> Unit): Unit =
+    collect(object : FlowCollector<T> {
+        override suspend fun emit(value: T) = action(value)
+    })
+
+И вот вся эта фигня в целом работает следующим образом:	
+	
+val myFlow = flow { flowCollector ->
+
+  val data1 = 1
+  val data2 = 2
+  flowCollector.emit(data1)
+  flowCollector.emit(data2)
+
+}
+
+myFlow.collect { data -> println(data) }
+	
+Оператор flow {} где-то создает FlowCollector, чтобы запустить на нем лямду с генерацией данных.
+ 	
