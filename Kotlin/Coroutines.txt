@@ -229,12 +229,19 @@ Job в scope. Узнав о том, что в его дочерней корут
 Итак, при ошибке в одной из корутин отменяются все остальные активные корутины скоупа. Иногда это нежелательно и вместо Job() нужно 
 использовать SupervisorJob(). Он отличается от Job() тем, что не отменяет всех своих детей при возникновении ошибки в одном из них.
 
-По уроку 20 (Flow).
--------------
+По уроку 18 (Channels)
+-----------------------
+
+Channels - механизм обмена данными МЕЖДУ КОРУТИНАМИ. Создается Channel, одна корутина отправляет в него, вторая получает.
+Функции отправки и получения являются suspend, то есть корутина, например, отправила, и если никто не ждет данных, то она
+приостанавливает свой код.
+
+По уроку 20 (Flow)
+-------------------
 
 Существуют 2 интерфейса: Flow и FlowCollector
 
-Flow - генерит данные и отправляет куда-то через FlowCollector, вызывая его emit. (метод Flow::collect)
+Flow - генерит данные и отдает коллектору (FlowCollector). См метод Flow::collect
 FlowCollector - принимает данные и что-то с ними делает, например работает как map или передает конечному получателю.
 
 public interface Flow<out T> {
@@ -245,9 +252,11 @@ public interface FlowCollector<in T> {
    public suspend fun emit(value: T)
 }
 
-И есть ещё самостоятельная функция collect, которая связывает вместе Flow и FlowCollector. Её задача - создать
-коллектор, который перенаправит получаемые данные в кастомную action, а затем направить в коллектор данные
-из Flow.
+И есть ещё самостоятельная extension-функция Flow.collect{пользов_лямда}, которая связывает вместе Flow и FlowCollector.
+Её задача:
+- создать коллектор, у которого функция emit вызывает пользовательскую лямду, передавая в неё данные.
+- запустить flowObj.collect(new_collector). Дело в том, что у flowObj есть extension-код для запуска на коллекторе, и 
+в этом коде генерация данных и отправка их в emit.
 
 suspend inline fun <T> Flow<T>.collect(crossinline action: suspend (value: T) -> Unit): Unit =
     collect(object : FlowCollector<T> {
@@ -256,16 +265,28 @@ suspend inline fun <T> Flow<T>.collect(crossinline action: suspend (value: T) ->
 
 И вот вся эта фигня в целом работает следующим образом:	
 	
-val myFlow = flow { flowCollector ->
+val myFlow = flow {
+
+  // this ==> collector
 
   val data1 = 1
   val data2 = 2
-  flowCollector.emit(data1)
-  flowCollector.emit(data2)
-
+  this.emit(data1)
+  this.emit(data2)
 }
 
-myFlow.collect { data -> println(data) }
+safeFlow.collect { data -> println(data) }
 	
-Оператор flow {} где-то создает FlowCollector, чтобы запустить на нем лямду с генерацией данных.
+Оператор flow {} сначала создает SafeFlow, передавая ему лямду в конструктор.
+А потом оператор safeFlow.collect {...} создаст новый FlowCollector и запустит на нем лямду из конструктора SafeFlow.
+А эта лямда, как показано выше, генерит данные и отправляет их через emit в другую лямду { data -> println(data) }
+
+Вообще получается что функция collect у интерфейса Flow нужна для того, чтобы "направить" генерируемые данные через
+коллектор куда-то дальше. Это дальше зависит от того как фактически реализована emin у коллектора. Flow может м не
+генерить данные сам (как показано выше). Главное чтобы они откуда-то брались.
+
+NOTE: вызов emit является suspend, safeFlow.collect тоже suspend
+
+
+
  	
