@@ -1,0 +1,9 @@
+viewLifeCycleOwner:
+-------------------
+is LifecycleOwner that represents the Fragment's View lifecycle. In most cases, this mirrors the lifecycle of the Fragment itself,
+but in cases of detached Fragments, the lifecycle of the Fragment can be considerably longer than the lifecycle of the View itself.
+
+Fragment views get destroyed when a user navigates away from a fragment, even though the fragment itself is not destroyed.
+This essentially creates two lifecycles, the lifecycle of the fragment, and the lifecycle of the fragment's view.
+
+Referring to the fragment's lifecycle instead of the fragment view's lifecycle can cause subtle bugs when updating the fragment's view.
