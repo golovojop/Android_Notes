@@ -1,0 +1,144 @@
+NOTE: Anonymous classes are named automatically by appending a $ sign and an increasing number to the name of the enclosing class.
+
+Имеем файл CoCo.kt вот такого вида:
+
+fun main() {
+    val job = Job()
+    val scope = CoroutineScope(job)
+
+    scope.launch {
+        delay(300)
+    }
+}
+
+Компилятор пакует все в класс CoCoKt
+
+public final class CoCoKt {
+   public static final void main() {
+	. . .
+   }
+}
+
+
+Цепочка вызовов от launch и вниз:
+---------------------------------------
+
+/**
+	job			= {JobImpl@686} JobImpl{Active}@2669b199
+	scope 		= {ContextScope@687} CoroutineScope(coroutineContext=JobImpl{Active}@2669b199)
+	start 		= {CoroutineStart@745} DEFAULT
+	block 		= {CoCoKt$main$1@746} kotlinx.coroutines.CoroutineScope.() -> kotlin.Unit
+	coroutine	= {StandaloneCoroutine@748} StandaloneCoroutine{Active}@6337c201	
+*/
+Scope.launch(.., .., block: suspend CoroutineScope.() -> Unit) {
+
+	.....
+	coroutine.start(.....)
+}
+
+********************
+
+/**
+	start 		= {CoroutineStart@745} DEFAULT
+	block		= {CoCoKt$main$1@746} kotlinx.coroutines.CoroutineScope.() -> kotlin.Unit
+	receiver 	= {StandaloneCoroutine@748} StandaloneCoroutine{Active}
+*/
+class AbstractCoroutine {
+	fun <R> start(startOpt: CoroutineStart, receiver: R, block: suspend R.() -> T) {
+		startOpt.invoke(block, receiver, this)
+	}
+}
+
+********************
+
+class CoroutineStart {
+
+	/**
+		this 		= {CoroutineStart@745} DEFAULT
+		block 		= {CoCoKt$main$1@746} kotlinx.coroutines.CoroutineScope.() -> kotlin.Unit
+		receiver 	= {StandaloneCoroutine@748} StandaloneCoroutine{Active}@6337c201		
+		completion	= {StandaloneCoroutine@748} StandaloneCoroutine{Active}@6337c201
+	*/
+    operator fun <R, T> invoke(block: suspend R.() -> T, receiver: R, completion: Continuation<T>): Unit =
+        when (this) {
+            DEFAULT -> block.startCoroutineCancellable(receiver, completion)
+			. . . 
+        }
+}
+
+********************
+
+/**
+	!!! this - это block !!!
+
+	this 		= {CoCoKt$main$1@746} kotlinx.coroutines.CoroutineScope.() -> kotlin.Unit
+	receiver 	= {StandaloneCoroutine@748} StandaloneCoroutine{Active}@6337c201
+	completion	= {StandaloneCoroutine@748} StandaloneCoroutine{Active}@6337c201
+*/
+fun <R, T> (suspend (R) -> T).startCoroutineCancellable(
+    receiver: R, completion: Continuation<T>,
+    onCancellation: ((cause: Throwable) -> Unit)? = null
+) = runSafely(completion) {
+        createCoroutineUnintercepted(receiver, completion).intercepted().resumeCancellableWith(Result.success(Unit), onCancellation)
+    }
+
+********************
+	
+fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, completion: Continuation<T>): Continuation<Unit>
+
+	ХЗ что там происходит, но функция вызывается на нашем block (который содержит invokeSuspend), а возвращается некий
+	Continuation, который далее, ниже, вдруг странным образом оказывается нашим block !!! Блять как это получилось ????????????
+	
+	ЁПРСТ !!!! Нашел в чем дело !!!!! (см в конце файла !!!)
+
+********************
+
+/** 
+	ПИПЕЦ !!! invokeSuspend - это continuation !!!! И номер уже 1904 !!!
+
+	continuation = 	{CoCoKt$main$1@1904}"Continuation at s.yarlykov.izisandbox.threads.coroutine.CoCoKt$main$1.invokeSuspend(CoCo.kt)"
+*/
+
+class CoroutineDispatcher {
+
+	public final override fun <T> interceptContinuation(continuation: Continuation<T>): Continuation<T> =
+        DispatchedContinuation(this
+}
+
+/**
+	!!! Что это за пиздец такой, что Continuation == invokeSuspend !!!
+	
+	continuation = 	{CoCoKt$main$1@1904}"Continuation at s.yarlykov.izisandbox.threads.coroutine.CoCoKt$main$1.invokeSuspend(CoCo.kt)"
+
+*/
+class DispatchedContinuation<in T>(
+    @JvmField val dispatcher: CoroutineDispatcher,
+    @JvmField val continuation: Continuation<T>
+) : DispatchedTask<T>(MODE_UNINITIALIZED), CoroutineStackFrame, Continuation<T> by continuation {
+
+}
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+ПИПЕЦ !!!! (kotlin.coroutines.jvm.internal.ContinuationImpl.kt)
+
+В пакете kotlin.coroutines.jvm.internal существуют такие классы как BaseContinuationImpl, ContinuationImpl, RestrictedContinuationImpl и SuspendLambda !!!
+
+class SuspendLambda : ContinuationImpl {...}
+
+	class ContinuationImpl : BaseContinuationImpl {...}
+	
+		class BaseContinuationImpl (completion : Continuation) : Continuation<Any?> {
+		
+			override fun resumeWith(result: Result<Any?>) {...}
+			abstract fun invokeSuspend(result: Result<Any?>): Any?
+			open fun create(value: Any?, completion: Continuation<*>): Continuation<Unit>
+		}
+
+Две последние функции вставляются компилятором в тот блок кода, который мы передаем в launch.
+Получается, что этот блок кода становится инстансом BaseContinuationImpl ну и соответственно Continuation.
+
+То есть получается, что наш блок кода и есть SuspendLambda. И он же Continuation !!!
+
+ =========================================================================================================

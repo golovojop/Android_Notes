@@ -1,0 +1,187 @@
+*************
+	Урок 1
+*************
+
+Job
+=====
+Mожно запускать корутину внутри корутины. Их ДЖОБЫ будут СВЯЗАНЫ между собой отношениями PARENT-CHILD,
+что является отдельным механизмом, который влияет на ОБРАБОТКУ ОШИБОК И ОТМЕНУ КОРУТИН.
+
+
+КСТАТИ: SuspendLambda живет в пакете kotlin.coroutines.jvm.internal в файле ContinuationImpl.kt
+
+****************************************************************************************************
+	Урок 2 (https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#coroutine-builders)
+****************************************************************************************************
+
+
+ПИПЕЦ !!!! (kotlin.coroutines.jvm.internal.ContinuationImpl.kt)
+
+class SuspendLambda : ContinuationImpl {...}
+
+	class ContinuationImpl : BaseContinuationImpl {...}
+	
+		class BaseContinuationImpl (completion : Continuation) : Continuation<Any?> {
+		
+			override fun resumeWith(result: Result<Any?>) {...}
+			abstract fun invokeSuspend(result: Result<Any?>): Any?
+			open fun create(value: Any?, completion: Continuation<*>): Continuation<Unit>
+		}
+
+Две последние функции вставляются компилятором в тот блок кода, который мы передаем в launch.
+Получается, что этот блок кода становится инстансом BaseContinuationImpl ну и соответственно Continuation.
+
+ =========================================================================================================
+
+Далее подробности.
+
+
+interface Job : CoroutineContext.Element {
+	. . . .
+}
+
+interface CoroutineScope {
+    val coroutineContext: CoroutineContext
+}
+
+interface Continuation<in T> {
+    public val context: CoroutineContext
+    public fun resumeWith(result: Result<T>)
+}
+
+
+NOTE: !!!!! Корутина реализует все эти три интерфейса ! То есть resumeWith(...) содержится в НЕЙ !
+
+
+Рассмотрим работу билдера launch
+--------------------------------
+
+Существует такой класс как AbstractCoroutine, который является базовым для корутин, создаваемых билдерами,
+и он имплементит три основных интерфейса. А именно:
+
+ - Continuation
+ - CoroutineScope
+ - Job
+
+То есть каждая созданная корутина является Job'ом, содержит context и имеет метод resumeWith(...)
+
+NOTE: Из AbstractCoroutine создаются LazyStandaloneCoroutine, StandaloneCoroutine и пр.
+
+Билдер:
+-------
+
+fun CoroutineScope.launch(
+	context: CoroutineContext, 
+	start: CoroutineStart, 
+	block: suspend CoroutineScope.() -> Unit): Job
+	
+Особый интерес здесь представляет третий аргумент 'suspend CoroutineScope.() -> Unit'. При компиляции это превращается в инстанс,
+наследующий от SuspendLambda и от котлиновской версии Function2 (котлиновская Function2 вызывается через invoke).
+В качестве this туда передается CoroutineScope. 
+
+Итак, в общих чертах алгоритм такой: билдер, имея скоуп, context и start, создает инстанс корутины. Далее он инстанциирует 
+лямду (она же Function2) и вызывает её Function2.invoke передавая аргументом корутину, которая является Continuation.
+Внутри лямды происходит цепочка вызовов: invoke -> create -> invokeSuspend и работа пошла.
+
+Теперь подробнее рассмотрим как это выглядит в байт коде:
+---------------------------------------------------------
+
+Это оболочка вокруг invokeSuspend внутри ревертированного Java-кода. Она не очень информативна:
+
+Function2< CoroutineScope; Continuation; Object; > {
+
+	public final invoke(Object; Object;) Object;	
+
+	public final create(Object; Continuation;) Continuation;
+	
+	public final invokeSuspend(Object;) Object;
+	
+};
+
+// Вот описание класса, который создается на базе лямды:
+--------------------------------------------------------
+
+// class signature 
+	SuspendLambda;Function2<CoroutineScope; Continuation<Unit>; Object;>;
+
+// class declaration
+	CoCoKt$main$1 extends SuspendLambda implements Function2<CoroutineScope, Continuation<? super Unit>, Object>
+
+// Попробуем восстановить:
+
+class CoCoKt$main$1 : SuspendLambda, Function2 {
+
+	// Конструктор, вызывающий конструктор SuspendLambd'ы
+	<init>(Continuation;) V
+		call SuspendLambda.<init> (Continuation;) V
+
+	public final invoke(var1 CoroutineScope; var2 Continuation;) Object;  ==>> Это Function2::invoke
+		create(var1, var2).invokeSuspend
+
+	public final create(var1 CoroutineScope; var2 Continuation;) Continuation;
+		return var2
+	
+	public final invokeSuspend(Object;) Object;
+
+}
+
+Видно, что в конструкторе передается Continuation (он же корутина). Теперт этот Continuation можно будет отдавать
+во внутренние вызовы suspend-функций.
+
+NOTE: Остается неясным как resumeWith узнает адрес invokeSuspend'а, чтобы её вызывать.
+
+// Далее пошаговый код её создания:
+------------------------------------	
+	
+// Создаем Job скоупа и скоуп	
+val job1 = INVOKESTATIC JobKt.Job$default (Job; Object;) CompletableJob;	
+	checkcast (job == context) ??? хз, наверное должно каститься
+val scope = INVOKESTATIC CoroutineScope (CoroutineContext;) CoroutineScope;
+
+// Это создается инстанс из блока кода для корутины (см класс выше)
+val coroutine = NEW CoCoKt$main$1
+
+call coroutine.constructor => INVOKESPECIAL CoCoKt$main$1.<init> (Continuation;)V
+	checkcast (suspendLamda == Function2) ==>> Вот, лямда оборачивается в (SuspendLambda + Function2)
+
+// И вот job самой корутины и её старт. Обрати внимание, что билдеру передается 
+val job2 INVOKESTATIC BuildersKt.launch$default (CoroutineScope; CoroutineContext; CoroutineStart; Function2; Object;) Job;  	
+		
+
+++++++++++++++++++++++++++++++++
+
+Вот цепочка вызовов. 
+
+ 
+public fun CoroutineScope.launch(
+    context: CoroutineContext = EmptyCoroutineContext,
+    startOptions: CoroutineStart = CoroutineStart.DEFAULT,
+    block: suspend CoroutineScope.() -> Unit
+): Job {
+    val coroutine = StandaloneCoroutine(context, active = true)
+    coroutine.start(startOptions, coroutine, block)
+    return coroutine
+}
+
+ -->> launch создает корутину и стартует её, передавая наш block (который SuspendLambda + Function2) 
+
+public fun <R> Coroutine::start(startOptions: CoroutineStart, receiver: R, block: suspend R.() -> T) {
+    startOptions(block, receiver, this)
+}
+
+class CoroutineStart {
+
+	operator fun <T> invoke(block: suspend () -> T, completion: Continuation<T>): Unit =
+		block.startCoroutineCancellable(completion)
+		
+	fun <T> (suspend () -> T).startCoroutineCancellable(completion: Continuation<T>): Unit = runSafely(completion) {
+		createCoroutineUnintercepted(completion).intercepted().resumeCancellableWith(Result.success(Unit))
+	}
+}
+
+public fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: kotlin.coroutines.Continuation<T>): kotlin.coroutines.Continuation<kotlin.Unit> { /* compiled code */ }
+
+	
+	
+
+		

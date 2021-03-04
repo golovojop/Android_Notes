@@ -1,0 +1,53 @@
+Готовый скрипт для публикации библиотеки на GitHub
+
+1. Сначала в стидии нужно запустить gradle task 'build' для генерации aar-файлов
+2. Потом в терминале запустить команду 'C:\apps\kotlin\SmartAdapter\SmartAdapter>C:\apps\kotlin\SmartAdapter\gradlew.bat publish --info'
+
+П.п. 1 можно выполнить в студии в UI Gradle (справа открывается через вкладку)
+П.п. 2 в консоли. Здесь 'C:\apps\kotlin\SmartAdapter\SmartAdapter' - это корневая папка к модулю с библиотекой.
+
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
+}
+
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
+
+def getVersionName = { ->
+    return "1.0"
+}
+
+// Не используй заглавные буквы
+def getArtificatId = { ->
+    return "smart_adapter"
+}
+
+// Это я добавил, чтобы создать имя AAR-файла
+def getAlias = { ->
+    return "SmartAdapter"
+}
+
+publishing {
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/ciscoff/SmartAdapter")
+            credentials {
+                username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
+                password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+            }
+        }
+    }
+
+    publications {
+        smartAdapter(MavenPublication) {
+            groupId 's.yarlykov.lib.smartadapter'
+            artifactId getArtificatId()
+            version getVersionName()
+            artifact("$buildDir/outputs/aar/${getAlias()}-release.aar")
+        }
+    }
+}
