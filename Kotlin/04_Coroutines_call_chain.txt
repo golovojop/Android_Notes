@@ -1,5 +1,16 @@
 NOTE: Anonymous classes are named automatically by appending a $ sign and an increasing number to the name of the enclosing class.
 
+Забегая вперед нужно отметить следующее:
+
+    scope.launch {
+        .....
+    }
+
+Здесь на базе лямды переданной билдеру создается инстанс класса 
+
+
+*********************************************************************************
+
 Имеем файл CoCo.kt вот такого вида:
 
 fun main() {

@@ -185,16 +185,28 @@ public fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: kotlin
 	Урок 3 Suspend Functions
 ****************************************************************************************************
 
-Каждая suspend функция получает первым, неявным аргументом ссылку на enclosed Continuation. 
+Каждая suspend функция получает первым, неявным, аргументом ссылку на enclosed Continuation. 
 Через его resumeWith будет выполнен возврат результата.
 
 suspend fun someProc(<implicit continuation: Continuation>, url: String): File { 
 	return suspendCoroutine { continuation -> 
 		. . . 
 		continuation.resume(result)
+		
+		... или в случае ошибки ...
+		
+		continuation.resumeWithException(error)
 	
 	}
 }
+
+suspendCoroutine служит промежуточным звеном, поставляющим continuation внутрь кода нашей функции.
+
+Создавая suspend функцию, мы должны позаботиться о том, чтобы она выполнялась асинхронно в другом потоке 
+или вернула результат сразу. Если же мы напишем в suspend функции код, блокирующий поток, то слово suspend
+нам никак не поможет. 
+
+Если не вызвать никакой continuation.resume..., то корутина никогда не продолжится.
 
 	
 	
