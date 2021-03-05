@@ -1,6 +1,6 @@
-*************
+****************************************************************************************************
 	Урок 1
-*************
+****************************************************************************************************
 
 Job
 =====
@@ -102,7 +102,7 @@ Function2< CoroutineScope; Continuation; Object; > {
 --------------------------------------------------------
 
 // class signature 
-	SuspendLambda;Function2<CoroutineScope; Continuation<Unit>; Object;>;
+	SuspendLambda; Function2<CoroutineScope; Continuation<Unit>; Object;>;
 
 // class declaration
 	CoCoKt$main$1 extends SuspendLambda implements Function2<CoroutineScope, Continuation<? super Unit>, Object>
@@ -125,7 +125,7 @@ class CoCoKt$main$1 : SuspendLambda, Function2 {
 
 }
 
-Видно, что в конструкторе передается Continuation (он же корутина). Теперт этот Continuation можно будет отдавать
+Видно, что в конструкторе передается Continuation (он же корутина). Теперь этот Continuation можно будет отдавать
 во внутренние вызовы suspend-функций.
 
 NOTE: Остается неясным как resumeWith узнает адрес invokeSuspend'а, чтобы её вызывать.
@@ -180,6 +180,21 @@ class CoroutineStart {
 }
 
 public fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: kotlin.coroutines.Continuation<T>): kotlin.coroutines.Continuation<kotlin.Unit> { /* compiled code */ }
+
+****************************************************************************************************
+	Урок 3 Suspend Functions
+****************************************************************************************************
+
+Каждая suspend функция получает первым, неявным аргументом ссылку на enclosed Continuation. 
+Через его resumeWith будет выполнен возврат результата.
+
+suspend fun someProc(<implicit continuation: Continuation>, url: String): File { 
+	return suspendCoroutine { continuation -> 
+		. . . 
+		continuation.resume(result)
+	
+	}
+}
 
 	
 	
