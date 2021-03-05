@@ -1,0 +1,48 @@
+build.gradle (project)
+
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
+
+allprojects {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/ciscoff/SmartAdapter")
+            credentials {
+                username = githubProperties['gpr.usr']
+                password = githubProperties['gpr.key']
+            }
+        }
+
+        google()
+        jcenter()
+    }
+}
+
+NOTE: Лучше свою репо вынести поверх google() и jcenter()
+
+===========================================================================================
+build.gradle (:app)
+
+
+plugins {
+	. . . .
+    id 'maven'
+}
+
+
+dependencies {
+
+	. . . .
+
+    // Охренеть. Когда было вот так 's.yarlykov.lib.smartadapter:1.1.2', то не работало !!!
+    // То есть нужно разделять package-name модуля и имя пакета внутри него двоеточием !!!
+    // И ещё добавил плагин 'maven'. ХЗ нужно это или нет ))
+    // 
+    // Точнее так - нужно разделять двоеточием groupId и artifactId
+    // 
+    implementation 's.yarlykov.lib:smartadapter:1.1.2'
+
+	. . . .
+
+}
