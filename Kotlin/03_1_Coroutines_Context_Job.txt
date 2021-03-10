@@ -42,5 +42,11 @@ Job -> состояние, подписки дочерних Job и пр.
 coroutine.context[Job] == coroutine
 
 Корутина в своем контексте по ключу [Job] хранит ссылку на саму себя как на Job.
+И получается замкнутый круг:
+
+1. val c1 = coroutine.context[Job]		-->> c1
+2. val c2 = (c1 as CoroutineContext)[Job]
+3. с1 == с2
+
 
 
