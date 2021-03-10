@@ -1,0 +1,33 @@
+interface CoroutineScope {
+    val coroutineContext: CoroutineContext
+}
+
+interface CoroutineContext {
+
+	interface Key<E : Element>
+	
+	interface Element : CoroutineContext {
+		val key: Key<*>
+	}
+	
+	. . . . прототипы методов для работы с элементами
+}
+
+Итак, CoroutineContext - это некое хранилище пар <Key, Element>
+
+В свою очередь каждый Element - это тоже контекст. То есть контекст
+является хранилищем других контекстов. Теперь смотрим сюда:
+
+interface Job : CoroutineContext.Element {
+
+	// Ключ для хранения Job внутри контекста. К companion object'у класса мы можем
+	// обратиться по имени этого класса, а значит использовать ключ можно так: [Job]
+	
+	companion object Key : CoroutineContext.Key<Job> {...}
+
+}
+
+Job -->> Element -->> CoroutineContext
+
+Job является элементом, а значит отдельным контекстом. То есть мы можем обратиться
+к job'у как к контексту и по ключу [Job] 
