@@ -70,3 +70,14 @@ val c1 = coroutine.context[Job] == coroutine (он же context)
 val c2 = c1[Job] снова даст c2 == coroutine == context == с1
 
 	и т.д. по кругу
+	
+А может быть так как-то:
+--------------------------
+Coroutine = CoroutineScope + Job + Continuation
+
+CoroutineScope::coroutineContext = this
+
+	имплементацию контекста выполняет Job и тогда и Job и Scope и сама корутина являются контекстом !!!
+
+		
+	
