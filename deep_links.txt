@@ -1,0 +1,14 @@
+ Allows the developer to register their app for a URI (uniform resource identifier) in the operating system once the app is installed.
+ A URI can be any string without special characters, such as HTTP, pinterest, fb or myapp. Once registered, if you append ://  to the end 
+ (e.g. pinterest://) and click this link, the Pinterest app will open up. If the Pinterest app is not installed, you’ll see a ‘Page Not Found’ error.
+ 
+ Chrome intent is actually a powerful tool since it automatically handles the case of the app not being installed.
+ 
+ 
+ Deep Linking with Android App Links (Android 6.0 +)
+ ---------------------------------------------------
+ 
+ Casual link example: https://imbd.com/title/12345
+  
+ If IMDB properly configures their website for app links, when IMDB is installed on the phone, it will open up immediately when the link is clicked.
+ If the app is not installed, the web URL will be opened in a browser.
