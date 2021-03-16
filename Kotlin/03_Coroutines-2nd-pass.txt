@@ -515,6 +515,35 @@ scope.launch() {
 затем уходит в suspend, переключаясь на Thread-5. Suspend завершается вызывая con.resume(data)
 на Thread-5 и следующий invokeSuspend тоже будет на Thread-5.
 
+****************************************************************************************************
+	Урок 12. Context. Связь Parent - Child.
+****************************************************************************************************	
+
+scope.launch { // parent coroutine
+ 
+   launch(launchContext) { // child coroutine
+ 
+   }
+ 
+}
+
+Билдер launch запускается на скоупе, у которого имеется coroutineContext. Кроме этого
+в качестве аргумента он тоже принимает контекст. Внутри билдера эти два контекста
+"плюсуются" и становятся единым РОДИТЕЛЬСКИМ контекстом для создаваемой корутины.
+
+parent_context = scope_context + launch_context; 	// parent_context[Job] - это job скоупа
+coroutine_context = parent_context + coroutine_job; // coroutine_context[Job] - это job корутины.
+
+То есть у корутины фактически 2 контекста: свой и родительский. И между job'ами обоих
+контекстов устанавливается связь в виде объекта ChildHandleNode:
+
+child вызывает parent_context[Job].attachChild(coroutine_context[Job]) и получает
+на выходе ChildHandleNode, который также сохраняется и в родительской Job.
+
+Наличие такого объекта у родителя означает, что есть незавершенный child. А child 
+через ChildHandleNode может разорвать связь вызовом ChildHandleNode.dispose и фактически 
+удалив ChildHandleNode у родителя. Если родитель не имеет ChildHandleNode, значит у него
+нет child'а.
 
 
 		
