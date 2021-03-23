@@ -1,0 +1,13 @@
+Полином - многочлен (пример: квадратное уравнение)
+--------------------------------------------------
+
+In mathematics, a polynomial is an expression consisting of variables (also called indeterminates) and coefficients, that involves ONLY
+the operations of addition, subtraction, multiplication, and NON-negative integer exponentiation of variables. 
+
+An example of a polynomial of a single indeterminate x is x2 − 4x + 7. 
+An example in three variables is x3 + 2xyz2 − yz + 1.
+
+A nondeterministic Turing machine is a "parallel" Turing machine that can take many computational paths simultaneously, with the restriction that the parallel Turing machines cannot communicate.
+
+A problem is assigned to the NP (nondeterministic polynomial time) class if it is solvable in polynomial time by a nondeterministic Turing machine.
+
