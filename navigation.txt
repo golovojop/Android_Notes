@@ -1,0 +1,44 @@
+1. Backstack - текущий видимый экран на вершине стека
+
+2. https://developer.android.com/guide/navigation/navigation-navigate
+   Абзац "Safe Args example"
+   
+   Делаем переход из врагмента SpecifyAmountFragment в фрагмент ConfirmationFragment с помощью 
+   action фпагмента SpecifyAmountFragment
+   
+   SpecifyAmountFragmentDirections - класс с набором СТАТИЧЕСКИХ методов дла каждой исходящей action
+   
+   actionSpecifyAmountFragmentToConfirmationFragment(...) - СТАТИЧЕСКИЙ метод для перехода, который
+   через параметры может принять значения аргументов, которые мы хотим передать в фрагмент назначения.
+   Типы этих аргументов прописаны в XML в action
+   
+   На выходе из actionSpecifyAmountFragmentToConfirmationFragment получаем инстанс наследника класса NavDirections,
+   а именно инстанс сгенеренного фреймворком класса ActionSpecifyAmountFragmentToConfirmationFragment : NavDirections.
+   Он инкапсулирует bundle с аргументами для фрагмента назначения и ID action.
+   
+   Далее это передается в navController.navigate(navDirection) и все
+   
+   Navigation and the back stack
+   =============================
+   
+   Как я понял, стэк является самостоятельной структурой в том смысле, что мы можем изменять его, не делая
+   переходов назад. Например, если я в цепочке A->B-C нахожусь в позиции С и вызову из кода NavController.popBackStack(),
+   а потом нажму на кнопку Back (или Up), то сразу попаду в А, потому что я снял со стека С, но при этом С
+   оставался на экране как текущий фрагмент.
+   
+   ХЗ ! Надо проверить
+   
+   
+
+
+SpecifyAmountFragment
+
+<action android:id="@+id/startMyFragment"
+    app:destination="@+id/myFragment">
+    <argument
+        android:name="myArg"
+        app:argType="integer"
+        android:defaultValue="1" />
+</action>
+
+SpecifyAmountFragment
