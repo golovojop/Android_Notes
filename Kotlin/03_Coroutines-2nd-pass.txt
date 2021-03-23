@@ -51,6 +51,15 @@ interface Continuation<in T> {
 
 NOTE: !!!!! Корутина реализует все эти три интерфейса ! То есть resumeWith(...) содержится в НЕЙ !
 
+И получается вот такая штука - два контекста !!! Видимо один родительский, второй - свой.
+
+class SomeCoroutine: CoroutineScope, Job, Continuation {
+	override val coroutineContext: CoroutineContext
+	override val context: CoroutineContext
+	.....
+
+}
+
 
 Рассмотрим работу билдера launch
 --------------------------------
