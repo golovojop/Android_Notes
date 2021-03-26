@@ -933,3 +933,90 @@ runBlocking
 БЛОКИРУЕТ (!!!) поток на котором её запустили пока не завершит свою работу (и пока не дождется завершения дочерних корутин)
 Для выполнения кода создает BlockingCoroutine. Если в произойдет ошибка, то все дочерние корутины отменяются и она выбросит
 исключение в месте своего вызова. Также он может вернуть результат своей работы.
+
+
+****************************************************************************************************
+	Урок 18. Channels
+****************************************************************************************************	
+
+Channels - средство обмена между КОРУТИНАМИ. Механизм напоминает Java BlockingQueue и отчасти паттерн Producer-Customer.
+Channel - потокобезопасен, нам не надо самим возиться с блокировками и синхронностью.
+
+val channel = Channel<Int>()
+ 
+launch {
+   // ...
+   channel.send(5)
+   // ...
+}
+ 
+launch {
+   // ...
+   val i = channel.receive()
+   // ...
+}
+
+
+send(..) и receive() - это suspend-функции. Каждая из них "засыпает", если не может сразу выполнить свою работу.
+
+send(data) собирается отправить данные:
+---------------------------------------
+> проверяет наличие в channel'е инстанса ReceiveElement (то есть ожидающего получателя). Если такой инстанс есть,
+  то берет оттуда continuation и вызывает его continuation.resume(data). То есть данные передаются получателю
+  через resume
+> если в channel'е нет инстанса ReceiveElement, то создается инстанс SendElement, туда записываются data и
+  continuation отправителя. Далее обычный возврат из suspend-функции с кодом COROUTINE_SUSPENDED. Отправитель
+  "заснет" пока получатель не получит сообщение и не разбудит отправителя.
+  
+receive() собирается получить данные:  
+-------------------------------------
+> проверяет наличие в channel'е инстанса SendElement (то есть ожидающего отправителя). Если такой инстанс есть,
+  то оттуда извлекаются data и continuation. Данные используются в качестве результата вызова метода receive, а
+  у continuation вызывается resume, чтобы возобновить выполнение корутины отправителя.
+> если в channel'е нет инстанса SendElement, то создается инстанс ReceiveElement. Туда помещается continuation
+  корутины получателя и выполняется возврат из receive c кодом COROUTINE_SUSPENDED.
+
+Так по кругу и гоняют сообщения. Особенность в том, что каждый раз корутина ожидающего резюмится в потоке активного !!!
+То есть, если "спит" получатель, то его корутина "проснется" когда отправитель в СВОЕМ потоке вызовет resume получателя.
+ХЗ что там под капотом, но видимо когда в процессе работы continuation.resume() дело доходит до вызова invokeSuspend,
+то вызывается диспетчер связанный с continuation этого resume и он переводит вызов invokeSuspend'а на поток своего
+пула. Корутина ведь не может войти в invokeSuspend в потоке чужого диспетчера. Я для теста накидал вот такой код:
+
+fun main() {
+
+    /**
+     * Для чистоты эксперимента создаем свой пул
+     */
+    val pool = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
+
+    val data = 5
+
+    runBlocking {
+
+        val channel = Channel<Int>()
+
+        launch(pool) {
+            delay(300)
+            println("send $data '${Thread.currentThread().name}'")
+            channel.send(data)
+            println("send done '${Thread.currentThread().name}'")
+        }
+
+        launch(Dispatchers.IO) {
+            delay(1000)
+            println("receive is starting '${Thread.currentThread().name}'")
+            val i = channel.receive()
+            println("receive done with $i '${Thread.currentThread().name}'")
+        }
+    }
+}
+
+и получил результат:
+
+	send 5 'pool-1-thread-2'
+	receive is starting 'DefaultDispatcher-worker-1'
+	receive done with 5 'DefaultDispatcher-worker-1'
+	send done 'pool-1-thread-3'
+
+То есть все работают в потоках своих диспетчеров.
+
