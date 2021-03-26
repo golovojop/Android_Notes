@@ -1,0 +1,15 @@
+Toolbar
+-------------
+
+
+1. Это обычная ViewGroup и в активити их может быть несколько
+1.1 Так как Toolbar это ViewGroup, то в ней можно помещать другие View.
+2. Чтобы заменить устаревшую ActionBar на Toolbar нужно выбрать для активити (ну или всего приложения)
+какую-нибудь тему xxx.NoActionBar
+3. Чтобы назначить конкретную Toolbar на роль панели, заменяющей ActionBar, нужно эту Toolbar
+прописать как :
+
+	Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+	setSupportActionBar(toolbar);
+
+После этого в неё можно инфлейтить меню.

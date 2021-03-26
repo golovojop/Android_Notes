@@ -1,0 +1,51 @@
+Kotlin compareBy
+=============================
+
+// Чтобы сделать СВОЙ класс "сравниевым"
+//
+interface Comparable<T> {
+	int compareTo(T other);
+}
+
+// Чтобы сравнивать ЧУЖИЕ классы( которые либо не Comparable либо Comparable, но 
+// не по тому критерию, который нам нужен)
+//
+interface Comparator<E> {
+	int compare(T a, T b);
+}
+
+
+
+Собственно compareBy:
+---------------------
+
+fun <T> compareBy(
+    vararg selectors: (T) -> Comparable<*>?
+): Comparator<T>
+
+
+Comparator, возвращаемый из compareBy, последовательно вызывает selectors.
+
+	int compare(T a, T b) {
+	
+		for(i = 0; i < selectors.size, i++) {
+		
+			val comparableA = selectors[i](a)
+			val comparableB = selectors[i](b)
+			
+			val result = comparableA.compareTo(comparableB)
+					
+			if(result != 0) return result
+		}
+	}
+
+	
+То есть все элементы сканируемой коллекции конвертируются в Comparable функцией-селектором,
+а затем просто сравниваются как два Comparable. И если результат не 0, то сравнение выполнено.
+
+	
+
+
+	
+
+

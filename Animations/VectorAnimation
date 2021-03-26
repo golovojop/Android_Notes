@@ -1,0 +1,98 @@
+В Android существует такой компонент как StateListDrawable. Он используется как Drawable.
+Это ресурс со списком картинок (ссылок на ресурсы картинок) плюс с указанием того какую картинку показывать в конкретном состоянии 
+родительского View. То есть если StateListDrawable используется как фон кнопки, то мы указываем какую картинку показывать
+для конкретного состояния кнопки (нажата, не нажата и т.д.) А кроме этого мы можем назначить для View кастомные атрибуты
+и использовать их значения для работы с StateListDrawable.
+
+https://developer.android.com/guide/topics/resources/drawable-resource.html#StateList
+
+Пример StateListDrawable:
+-------------------------
+
+<?xml version="1.0" encoding="utf-8"?>
+<animated-selector
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <item
+    android:id="@+id/elephant"
+    android:drawable="@drawable/vd_animals_elephant"
+    app:state_elephant="true"/>
+
+  <item
+    android:id="@+id/buffalo"
+    android:drawable="@drawable/vd_animals_buffalo"
+    app:state_buffalo="true"/>
+
+  <item
+    android:id="@+id/hippo"
+    android:drawable="@drawable/vd_animals_hippo"/>
+
+Здесь показано, что у нас три картинки и каждая из них должна работать при активном состоянии
+определенных атрибутов, а именно:
+
+показать @drawable/vd_animals_elephant, если app:state_elephant="true"
+показать @drawable/vd_animals_buffalo, если app:state_buffalo="true"
+показать @drawable/vd_animals_hippo, если другие условия не выполняются (дефолтовое состояние)
+
+Но что такое state_elephant и state_buffalo ?
+
+Это кастомные атрибуты !!!
+----------------------------------------------------------------------------
+
+Теперь о кастомных атрибутах, а потом как это связать вместе.
+
+Допустим у нас есть ImageView
+
+Мы запросто можем добавить ему кастомные атрибуты вот так:
+
+Resource file: values/animals.xml
+---------------------------------
+
+  <declare-styleable name="AnimalsState">
+    <attr name="state_hippo" format="boolean"/>
+    <attr name="state_buffalo" format="boolean"/>
+    <attr name="state_elephant" format="boolean"/>
+  </declare-styleable>
+
+Пока никакой связи между атрибутами и View нет. Также обращаю внимание, что AnimalsState это
+в ОБЫЧНОМ случае - имя класса кастомного View для которого эти атрибуты предназначены, но !!!
+
+Если у нас нет кастомых View, то этот набор кастомных атрибутов мы можем использовать с любым View,
+прямо в XML, а потом анализировать из значения в коде !!!
+----------------------------------------------
+Короче пока не забыл
+
+public void setImageState(int[] state, boolean merge)
+
+В массиве мы передаем ID атрибутов (ID атрибутов, а не значения этих атрибутов !!!) которые нас интересуют.
+По их состоянию (комбинации состояний) будет определяться состояние ImageView. Так вот, если нас атрибут не интересует, то
+можно передать отрицательное значение его ID, например так: -R.attr.state_buffalo
+
+В моем случае R.attr.state_buffalo это boolean атрибут, но нам нужен его ID, а не значение. И если значение не интересует,
+то присваем его ID отрицательное значение. Кстати -1 тоже работает !
+
+Так вот в моем примере с выбором животных по нажатию кнопки алгоритм был таков: жмем кнопку с названием СЛОНА,
+для ImageView устанавливается состояние:
+
+ private static final int[] STATE_SET_ELEPHANT =
+      {-1, -R.attr.state_buffalo, R.attr.state_elephant};
+
+iconView.setImageState(STATE_SET_ELEPHANT, true);
+
+Здесь два отрицательных значения и одно положительное (значит атрибут с этим ID работает !!!)- ID интересующего нас атрибута.
+
+Смотрим выше:
+
+<?xml version="1.0" encoding="utf-8"?>
+<animated-selector
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <item
+    android:id="@+id/elephant"
+    android:drawable="@drawable/vd_animals_elephant"
+    app:state_elephant="true"/>
+
+
+Итак, селектор говорит, что нужно показать @drawable/vd_animals_elephant
