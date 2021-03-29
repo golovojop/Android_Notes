@@ -9,3 +9,6 @@ saveBitmap(cache);
 view.destroyDrawingCache();
 
 NOTE: Еще можно посмотреть в проекте IziSandbox в декораторах для чата
+
+Вот ещё статья:
+https://medium.com/@shiveshmehta09/taking-screenshot-programmatically-using-pixelcopy-api-83c84643b02a
