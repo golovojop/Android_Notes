@@ -1174,7 +1174,7 @@ fun <T> flow( block: suspend FlowCollector<T>.() -> Unit ): Flow<T> = SafeFlow(b
 
 1. val safeFlow = flow<Int> { // this: FlowCollector<Int>
 
-  // this ==> collector
+  // this: collector
 
   val data1 = 1
   val data2 = 2
@@ -1276,6 +1276,50 @@ collect, single, reduce, count, first, toList, toSet, fold
 
 NOTE: Terminal операторы запускают Flow так же, как это делает collect. Результатом их работы является не Flow,
 а данные, полученные из Flow.
+
+
+****************************************************************************************************
+	Урок 21. Flow продолжение
+****************************************************************************************************	
+
+В андроиде все операции с UI выполняются в main потоке и в RxJava для управления потоками применялись
+шедулеры. Например генерим в IO потоке, показываем результат в UI потоке:
+
+    Observable.create<Int> { emitter ->
+        (1..10).forEach(emitter::onNext)
+    }
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+
+У Flow тоже есть механизм управления потоками генерации данных и их конечной обработки. Как делать НЕЛЬЗЯ:
+
+val someFlow = flow {
+   coroutineScope {
+       launch {
+           delay(1000)
+           emit("hello")	// !!! emit не в потоке/контексте коллектора
+       }
+ 
+       launch {
+           delay(1000)
+           emit("world")	// !!! emit не в потоке/контексте коллектора
+       }
+   }
+}
+
+
+viewModelScope.launch {
+	someFlow.collect { data ->
+		textView.text = data
+	}
+}
+
+Вот так получим крэш, потому что блоки flow {} и collect {} выполняются в разных корутинах, т.е. в разных 
+контекстах и В Kotlin это ЗАПРЕЩЕНО !!! Блок flow {} должен "сохранять" контекст блока collect {}.
+
+Ещё раз: блок collect {} определен в конкретной корутине и должен выполняться в её контексте. Однако если
+блок flow {} создает ВНУТРИ СЕБЯ КОРУТИНУ и из НЕЁ вызывает emit, то это приведет к выполнению блока collect {}
+в контексте вызова оператора emit, то есть в контексте чужой корутины.
 
 
 
