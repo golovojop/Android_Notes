@@ -1,0 +1,4 @@
+Установка
+
+1. скачать flutter sdk
+2. полечить cmd -> flutter doctor (https://stackoverflow.com/questions/65598835/the-flutter-sdk-is-incomplete)
