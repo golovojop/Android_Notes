@@ -1,0 +1,66 @@
+Constraints go down. Sizes go up. Parent sets position.
+=======================================================
+
+- Constraints -> Это аналог Measure. Родитель сообщает каждому ребенку его ограничения по размерам.
+  Ребенок должен определить свой размер и ответить родителю (Это и есть Constraints go down. Sizes go up.)
+- Parent sets position -> Это аналог child.layout(.....)  
+
+NOTE: Containers with no children try to be as big as possible.
+
+
+Scaffold:
+----------
+
+Это базовый класс, который уже структурирован под Material Design. Имеет API для показа бокового Drawer
+и панели Buttom Sheet.
+
+атрибут appBar: ... это AppBar
+атрибут body: ... это остальной контент
+атрибут floatingActionButton: - отдельный атрибут под FAB
+
+
+Column/Row
+-----------
+Это аналог LinearLayout соответственно в верт и горих ориентациях.
+
+
+Flexible widget
+---------------
+
+Его дети по умолчанию WRAP_CONTENT !!! Если требуется иное поведение, то регулируется через flex/fit.
+
+Дети у Flexible тоже становятся flexible даже если имеют фикс размеры. В основном используется в Column/Row
+и работает как weight в LinearLayout.
+
+
+Expanded widget:
+---------------
+
+Его дети по умолчанию MATCH_PARENT !!! Если требуется иное поведение, то регулируется через flex.
+
+
+SizedBox widget:
+----------------
+Если есть дети, то жестко задает их размеры (в dp). Если детей нет, то работает как <Space> ФИКСИРОВАННОГО размера.
+
+
+Spacer widget:
+---------------
+Это <Space> "плавающего" размера. Есть свойство flex.
+
+
+Icon widget:
+-------------
+Это иконка. Не Image !!!
+
+
+Image widget:
+-------------
+Это ImageView. Кстати можно src указывать как URL в тырнете !!! 
+
+
+
+
+
+
+
