@@ -1,0 +1,28 @@
+https://flutter.dev/docs/development/ui/animations/tutorial
+------------------------------------------------------------
+
+Заданы начальные и конечные значения A и B. В течении duration изменяемый параметр должен пройти
+спектр значений от А до В (не выходя за диапазоны) и эти изменения могут проходить либо линейно 
+либо как угодно кудряво ))
+
+Например, сначала линейно увеличиваться, потом пойти вниз по экспоненте, а потом снова линейно
+увеличиваться. За "траекторию" изменения значений отвечают интерполяторы, которые во флаттере
+представлены класом CurvedAnimation !!!
+
+
+AnimationController - это генератор значений. Он их выдает на каждый VSYNC и генерит ЛИНЕЙНО 
+в диапазоне 0.0 - 1.0. Если нам нужна НЕЛИНЕЙНАЯ выдача, то подключаем интерполятор в виде
+инстанса CurvedAnimation. Если нам требуется свой диапазон значений (например от 10 до 500),
+то подключаем Tween.
+
+Все вместе:
+
+AnimationController controller = AnimationController(
+    duration: const Duration(milliseconds: 500), vsync: this);
+	
+final Animation<double> curve =
+    CurvedAnimation(parent: controller, curve: Curves.easeOut);
+	
+Animation<int> alpha = IntTween(begin: 0, end: 255).animate(curve);
+
+Непосредсвенно запуск анимации здесь происходит на Tween.animate(...)
