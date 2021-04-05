@@ -1,0 +1,62 @@
+ImageView
+	android:adjustViewBounds="true"
+	
+ConstraintLayout Childs:
+
+1. У детей лучше не использовать match_parent, а использовать "0dp". Это означает match_constraints !!!
+
+2. ссылаясь в constraint'ах на другие элементы нельзя использовать знак '+' в id. Вот так надо:
+
+	app:layout_constraintTop_toBottomOf="@id/someView" - перед id нет '+'
+
+3. Если размер элемента меньше чем пространство в котором он ограничен constraint'ми, то элемент
+автоматически выравнивается по центру этого пространства. Чтобы придать ему нужную 'gravity' используется
+параметр bias (по уполчанию он 0.5 поэтому выравнивание по центру).
+
+	app:layout_constraintHorizontal_bias="0" -> 'gravity' start
+	
+4. Если элемент имеет wrap_content, то он может выйти за пределы constraint'ов. Например длинный текст
+в TextView. Чтобы этого не произошло явно говорим ему не "вылезать"	
+
+	app:layout_constrainedWidth="true"
+	
+	
+5. Если у view есть margin относительно другого элемента, который служит constraint'ом, и этот
+элемент вдруг стал GONE, то margin сохранится и будет работать относительно следующего элемента, например
+parent'а. Однако если я хочу, чтобы в такой ситуации применялся другой margin, то я должен делать так:
+	
+	app:layout_goneMarginEnd="XXdp"
+	
+6. Barier определяет где располагается граница определенной группы виджетов. Это удобно когда требуется выбрать 
+один из нескольких элементов в качестве constraint'а, но не понятно какой, потому что они все могут менть свой размер.
+В этом случае используется Barier. Задаем ЛЕВЫЙ вертикальный (start) барьев для группы элементов из ДВУХ кнопок.
+
+<androidx.constraintlayout.widget.Barrier
+              android:id="@+id/barrier"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              app:barrierDirection="start"
+              app:constraint_referenced_ids="button1, button2" />
+			  
+Доп параметр barrierAllowsGoneWidgets влияет на то как барьер реагирует на то что члены группы становятся GONE.
+
+7. Flow - это способ сгруппировать элементы и выровнять их друг относительно друга внутри группы. Например код
+ниже группирует 4 кнопки. Три из них будут на одной строке, а четвертая уйдет ниже на следующую.
+
+    <androidx.constraintlayout.helper.widget.Flow
+        android:id="@+id/flow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="button1,button2,button3,button4"
+        app:flow_horizontalStyle="packed"
+        app:flow_verticalStyle="packed"
+        app:flow_horizontalGap="12dp"
+        app:flow_verticalGap="12dp"
+        app:flow_wrapMode="chain"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:flow_horizontalBias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+		
+У самих кнопок, входящих в группу, не нужно указывать constraint'ы. Параметры относящиеся к Flow начинаются как 'app:flow_',
+не путай их с аналогичными из 'app:layout_' например тот же bias.
