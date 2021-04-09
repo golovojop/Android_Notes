@@ -1,0 +1,42 @@
+Отдельно по Type Projection:
+============================
+
+Напомню - применяется в месте использования инстанса на базе дженерика. При этом в этом месте использования генерится
+специальный суррогатный тип, который становится как бы базовым для оценки subtype'а в отношении реально подставляемых
+значений. Реально подставляемые значение должны быть реальными subtype'ами, то есть удовлетворять 2-ум правилам.
+
+Когда делаем out-projection, то все функции суррогатного типа, которые в дженерике ПРИНИМАЛИ 'type parameter', начинают
+принимать Nothing. Соответственно subtype всегда примет НЕ МЕНЬШЕ. 
+
+Когда делаем in-projection, то все функции суррогатного типа, которые в дженерике ВОЗВРАЩАЛИ 'type parameter', начинают
+возвращать Any?. Соответственно subtype всегда вернет НЕ БОЛЬШЕ. 
+
+Запомнинаем, что:
+----------------
+
+In-projections делает 'return types' как Any?
+Out-projections делает 'argument types' как Nothing
+
+И теперь пара трюков. Допустим есть функция, которая использует Group<T> и выполняет с ней чтение/запись.
+
+	fun useGroup(group: Group<...>) {...}
+
+Если мы вот так укажем type projection: 
+
+    fun useGroup(group: Group<in Nothing>) {...}  ИЛИ  fun useGroup(group: Group<out Any?>) {...}
+
+то получим вот такие АБСОЛЮТНО ОДИНАКОВЫЕ суррогаты:
+	
+    interface Group<in Nothing> {                       interface Group<out Any?> {
+      fun insert(item: Nothing): Unit                     fun insert(item: Nothing): Unit
+      fun fetch(): Any?                                   fun fetch(): Any? 
+    }                                                   }
+	
+	
+Вот они 3 способа для star projection:
+
+- in-projection		- <in Nothing>
+- out-projection	- <out Any?>
+- star-projection	- <*>	
+
+Kotlin позволяет использовать любое написание, но стандартом считается <*>.

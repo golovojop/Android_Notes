@@ -1,0 +1,39 @@
+Type parameter constraints позволяют ограничить ТИПЫ type argument'ов по upper bounds.
+
+Напомню, что type parameter'ы могут декларироваться в следующих местах:
+- классы (дженерики)
+- интерфейсы (дженерики)
+- функции (любые - члены классов, статические, внешние, extension)
+- extension properties
+
+
+Один type parameter (2 формы записи):
+-------------------------------------
+
+    fun <T : Animal> chooseFavorite(animals: List<T>): T {...}
+	fun <T> chooseFavorite(pets: List<T>): T where T : Animal
+
+мы можем вызвать функцию с List<Dog>, но не с List<String>
+
+
+Несколько type parameter'ов (2 формы записи):
+---------------------------------------------
+
+    fun <T : Animal, U : Human> chooseFavorite(animals: List<T>, owners: List<U>): T {...}
+	fun <T, U> chooseFavorite(animals: List<T>, owners: List<U>): T where T : Animal, U : Human
+
+здесь та же история по отдельности с каждым type parameter'ом.
+
+
+Несколько constraints на ОДИН type parameter:
+---------------------------------------------
+
+В этом случае их указывают не перед имененм функции, а ПОСЛЕ него с ключевым словом where
+
+    fun <T> chooseFavorite(pets: List<T>): T where T : Animal, T : Named
+
+Здесь T должен имплементить ОБА интерфейса !!!
+
+NOTE: byte code генерится таким образом, что return type получается как первый constraint type,
+то есть Animal. Однако компилятор вроде сам правильно кастит там где надо использовать результат
+вызова этой функции.
