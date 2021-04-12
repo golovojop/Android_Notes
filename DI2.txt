@@ -1,0 +1,271 @@
+Итак, компонент - это ИНТЕРФЕЙС. Указываем только прототипы функций, весь код генерится даггером.
+Под капотом создания копонента используется Builder, который состоит из методов-прокладок (добавляющих модули,
+которые впоследствии будут генерить инстансы нужных типов)
+
+NOTE: Внутри компонента могут быть только прототипы функций и другие интерфейсы (например кастомный билдер).
+Код вложенных интерфейсов (БИЛДЕРОВ) также генерится даггером !!!
+
+@Module()
+public class AppModule {
+    @Provides
+    SomeObject provideSomeObject() {
+        return new SomeObject();
+    }
+}
+
+@Component(modules = {AppModule.class})
+public interface AppComponent {
+
+    SomeObject getSomeObject();
+	
+	void injectTo(MagicClass magicClass)
+	----
+}
+
+NOTE: У компонентов два вида методов: первые что-то возвращают, а вторые НИЧЕГО не возвращают. Вот эти
+вторые предназначены для того, чтобы инжектить в инстанс, который у них указан в аргументе. Это может
+быть вообще ЛЮБОЙ класс. Даже совсем не активити и не фрагмент, а ЛЮБОЙ.
+
+Можно создавать билдеры компонентов самостоятельно. Для этого ВНУТРИ компонента декларируем вложенный 
+ИНТЕРФЕЙС с аннотицией @Component.Builder. Обязательное условие - у него должен быть метод, возвращающий 
+инстанс самого этого билдера. Называться он может как угодно.
+
+@Component(modules = {AppModule.class})
+public interface AppComponent {
+
+    SomeObject getSomeObject();
+ 
+    @Component.Builder
+    interface MyBuilder {
+	
+        AppComponent buildComponent();
+		
+        MyBuilder setThisFuckingModule(AppModule appModule);
+		
+		@BindsInstance
+        MyBuilder saveSomeObject(SomeObject someObject);
+    }
+}
+
+NOTE: Метод с аннотацией @BindsInstance внутри билдера позволяет СОХРАНЯТЬ внутри КОМПОНЕНТА любые
+нужные нам инстансы, которые потом можно инжектить или использовать как нам хочется. То есть благодаря
+@BindsInstance можно хранить инстанс прямо в компоненте и не обращаться за ним в модуль.
+
+Сабкомпоненты
+-------------
+
+Их должен создавать РОДИТЕЛЬСКИЙ компонент (то есть внутри родительского компонента должны быть прототипы
+функций, возвращающих инстансы соотв сабкомпонентов и мы эти функции вызываем ЯВНО через родит компонент)
+Естественно код этих функций генерится даггером.
+
+У сабкомпонентов тоже могут быть модули и этим модулям в конструктор могут потребоваться аргументы. Поэтому
+у сабкомпонентов тоже можно создавать кастомные билдеры. Билдер сабкомпонента - интерфейс с аннотацией 
+@Subcomponent.Builder внутри самого сабкомпонента. 
+
+Кстати, описывая интерфейс сабкомпонента мы можем спокойно использовать наследование и наследование от
+дженериков. Рассмотрим пример:
+
+Это некий прото-модуль:
+-----------------------
+
+public interface ActivityModule {
+}
+
+Это некий прото-компонент (это база для сабкомпонента). Он должен инжектить в некий класс А.
+-------------------------------------------------------
+
+public interface ActivityComponent<A> {
+    void inject(A activity);
+}
+
+Это некий прото-билдер, который является базой билдера сабкомпонента.
+----------------------------------------------------------------------
+
+public interface ActivityComponentBuilder<C extends ActivityComponent, M extends ActivityModule>   {
+    C build();
+    ActivityComponentBuilder<C, M> module(M module);
+}
+
+Это модуль сабкомпонента, у которого НЕТ дефолтового конструктора, а есть конструктор с АРГУМЕНТОМ !!!
+------------------------------------------------------------------------------------------------------
+
+@Module
+public class FirstActivityModule extends ActivityModule{
+ 
+    private final Bundle args;
+ 
+    public FirstActivityModule(Bundle args) {
+        this.args = args;
+    }
+ 
+    @FirstActivityScope
+    @Provides
+    FirstActivityPresenter provideFirstActivityPresenter() {
+        return new FirstActivityPresenter(args);
+    }
+}
+
+Благодаря этим интейфейсам и с указанием всех argument types дженериков получаем вот такой компонент с 
+билдером:
+-------------------------------------------------------------------------------------------------
+
+@FirstActivityScope
+@Subcomponent(modules = FirstActivityModule.class)
+public interface FirstActivityComponent extends ActivityComponent<FirstActivity> {
+ 
+    @Subcomponent.Builder
+    interface Builder extends ActivityComponentBuilder<FirstActivityComponent, FirstActivityModule> {
+	
+        // под капотом: FirstActivityComponent build();
+		
+        // под капотом: ActivityComponentBuilder<FirstActivityComponent, FirstActivityModule> module(FirstActivityModule module);	
+ 
+    }
+}
+
+Итак, это сабкомпонент, у которого есть родительский компонент, который ОБЯЗАН уметь создавать инстансы сабкомпонентов.
+Посмотрим на родительский компонент:
+
+@AppScope
+@Component(modules = AppModule.class)
+public interface AppComponent {
+    void injectComponentsHolder(ComponentsHolder componentsHolder);
+}
+
+Он инжектит куда-то в ComponentsHolder. ComponentsHolder - это некий "коллектор" самых разных сабкомпонентов.
+Просто хранилка. И AppComponent при вызове этого метода должен заинжектить в ComponentsHolder все что тому требуется,
+а холдеру требуется некая Mар'а из БИЛДЕРОВ.
+
+public class ComponentsHolder {
+ 
+    private final Context context;
+ 
+    @Inject
+	--------
+    Map<Class<?>, Provider<ActivityComponentBuilder>> builders;
+ 
+    private Map<Class<?>, ActivityComponent> components;
+    private AppComponent appComponent;
+ 
+    public ComponentsHolder(Context context) {
+        this.context = context;
+    }
+ 
+    void init() {
+        appComponent = DaggerAppComponent.builder().appModule(new AppModule(context)).build();
+        appComponent.injectComponentsHolder(this);
+        components = new HashMap<>();
+    }
+ 
+    public AppComponent getAppComponent() {
+        return appComponent;
+    }
+ 
+	// overloading !!! Компонент сам создаст модули их дефолтовыми конструкторами.
+	------------------
+    public ActivityComponent getActivityComponent(Class<?> clazz) {
+        return getActivityComponent(clazz, null);
+    }
+ 
+    // overloading !!! Компонент получит модули ИЗВНЕ
+	------------------
+    public ActivityComponent getActivityComponent(Class<?> clazz, ActivityModule module) {
+        ActivityComponent component = components.get(clazz);
+        if (component == null) {
+            ActivityComponentBuilder builder = builders.get(clazz).get();
+            if (module != null) {
+                builder.module(module);
+            }
+            component = builder.build();
+            components.put(clazz, component);
+        }
+        return component;
+    }
+ 
+    public void releaseActivityComponent(Class<?> clazz) {
+        components.put(clazz, null);
+ 
+    }
+}
+
+
+НО !!! Где AppComponent возьмёт данные нужные этому ComponentsHolder ??? А возьмет он их из своего AppModule,
+который, в свою очередь, ПОЛУЧИТ их ОТ ДАГГЕРА )))
+
+
+@Module(subcomponents = {FirstActivityComponent.class})
+public class AppModule {
+ 
+    private final Context context;
+ 
+    public AppModule(Context context) {
+        this.context = context;
+    }
+ 
+    @AppScope
+    @Provides
+    Context provideContext() {
+        return context;
+    }
+ 
+ 
+    -->> Метод, возвращающий билдер
+    @Provides
+    @IntoMap
+    @ClassKey(FirstActivity.class)
+    ActivityComponentBuilder provideFirstActivityBuilder(FirstActivityComponent.Builder builder) {
+        return builder;
+    }
+}
+
+
+Итак, смотрим: методу provideFirstActivityBuilder нужен аргумент FirstActivityComponent.Builder, но это
+интерфейс, задекларированный внутри FirstActivityComponent (и инстанс FirstActivityComponent ещё не 
+создан в данный момент). НО БИЛДЕР его УЖЕ СОЗДАН даггером. БИЛДЕР ТО УЖЕ ЕСТЬ, потому что для генерации
+кода нужно просто сгенерить его код. Билдеру ведь не нудны никакие аргументы к конструктор. Это ПОТОМ
+бы будем вызывать методы билдера с аргументами, чтобы собрать компонент. В частности передадим инстанс
+модуля FirstActivityModule.
+
+NOTE: Аннотация @Module(subcomponents = {FirstActivityComponent.class}) подсказывает модулю, где
+запрашивать инстанс FirstActivityComponent.Builder'а !!!
+
+Вот как все это работает вместе:
+-------------------------------
+
+public class FirstActivity extends AppCompatActivity {
+ 
+    public static final String EXTRA_ARGS = "args";
+ 
+    @Inject
+    FirstActivityPresenter presenter;
+ 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.second_activity);
+ 
+        Bundle args = getIntent().getBundleExtra(EXTRA_ARGS);
+		
+        FirstActivityComponent component = 
+		    (FirstActivityComponent) App.getApp(this).getComponentsHolder()
+		    .getActivityComponent(getClass(), new FirstActivityModule(args));
+			
+        component.inject(this);
+    }
+ 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isFinishing()) {
+            App.getApp(this).getComponentsHolder().releaseActivityComponent(getClass());
+        }
+ 
+    }
+}
+
+В общем это полный пиздец. Если ли смысл создавать подобный ад, станет ли код от этого читабельней
+и простой в сопровождении ? ХЗ.
+
+NOTE: Но смысл тут в следующем - декларируя кастомный билдер для сабинтерфейса мы всегда можем получить готовый
+инстанс этого билдера через родительский компонент, который в свою очередь получит его из своего модуля благодаря
+аннотации subcomponents = {xxx.class}.
